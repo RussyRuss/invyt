@@ -96,6 +96,18 @@ app.get("/rsvp", async (req, res) => {
   }
 });
 
+// DELETE RSVP
+app.delete("/rsvp/:id", async (req, res) => {
+  try {
+    await RSVP.findByIdAndDelete(req.params.id);
+    const guests = await RSVP.find();
+    res.json({ total: guests.length, guests });
+  } catch (err) {
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
