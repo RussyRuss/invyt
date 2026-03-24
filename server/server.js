@@ -6,44 +6,37 @@ const mongoose = require("mongoose");
 
 const app = express();
 
-// ✅ MIDDLEWARE
+// MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
-// ✅ PORT (Railway-safe)
+//  PORT (Railway-safe)
 const PORT = process.env.PORT || 5050;
 
-// ✅ SAFE MONGO CONNECT
+//  SAFE MONGO CONNECT
 async function connectDB() {
   try {
-    async function connectDB() {
-    try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("✅ MongoDB connected");
-    } catch (err) {
-        console.error("❌ MongoDB connection error:", err.message);
-    }
-    }
-    console.log("✅ MongoDB connected");
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB connected");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.error("MongoDB connection error:", err.message);
   }
 }
 
 connectDB();
 
-// ✅ MODEL
+//  MODEL
 const RSVP = mongoose.model("RSVP", {
   name: String,
   guest: String,
 });
 
-// ✅ HEALTH CHECK ROUTE
+//  HEALTH CHECK ROUTE
 app.get("/", (req, res) => {
-  res.send("Server is working 🚀");
+  res.send("Server is working");
 });
 
-// ✅ POST RSVP
+//  POST RSVP
 app.post("/rsvp", async (req, res) => {
   try {
     const { name, guest } = req.body;
@@ -66,27 +59,27 @@ app.post("/rsvp", async (req, res) => {
     const total = await RSVP.countDocuments();
 
     res.json({
-      message: "Saved 🎉",
+      message: "Saved",
       total,
     });
   } catch (err) {
-    console.error("❌ RSVP ERROR:", err);
+    console.error(" RSVP ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ GET ALL RSVPs
+//  GET ALL RSVPs
 app.get("/rsvp", async (req, res) => {
   try {
     const guests = await RSVP.find();
     res.json({ total: guests.length, guests });
   } catch (err) {
-    console.error("❌ FETCH ERROR:", err);
+    console.error(" FETCH ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ START SERVER (CRITICAL FIX)
+//  START SERVER (CRITICAL FIX)
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });
