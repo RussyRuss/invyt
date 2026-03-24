@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -10,10 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//  PORT (Railway-safe)
 const PORT = process.env.PORT || 5050;
 
-//  SAFE MONGO CONNECT
+// MONGO CONNECT
 async function connectDB() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
@@ -25,31 +25,46 @@ async function connectDB() {
 
 connectDB();
 
-//  MODEL
+// EMAIL
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+async function sendNotification(name, guest) {
+  const guestLine = guest ? ` + ${guest}` : "";
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: "russelsouffrant12@gmail.com, kaylimcgurn@gmail.com",
+    subject: "New RSVP!",
+    text: `${name}${guestLine} just RSVP'd to the baby shower!`,
+  });
+}
+
+// MODEL
 const RSVP = mongoose.model("RSVP", {
   name: String,
   guest: String,
 });
 
-//  HEALTH CHECK ROUTE
+// HEALTH CHECK
 app.get("/", (req, res) => {
   res.send("Server is working");
 });
 
-//  POST RSVP
+// POST RSVP
 app.post("/rsvp", async (req, res) => {
   try {
     const { name, guest } = req.body;
-
-    console.log("Incoming:", req.body);
 
     if (!name) {
       return res.status(400).json({ error: "Name required" });
     }
 
-    // prevent duplicates
     const exists = await RSVP.findOne({ name });
-
     if (exists) {
       return res.status(400).json({ error: "Already RSVPed" });
     }
@@ -58,28 +73,29 @@ app.post("/rsvp", async (req, res) => {
 
     const total = await RSVP.countDocuments();
 
-    res.json({
-      message: "Saved",
-      total,
-    });
+    // send email notification (don't await — don't block the response)
+    sendNotification(name, guest).catch((err) =>
+      console.error("Email error:", err.message)
+    );
+
+    res.json({ message: "Saved", total });
   } catch (err) {
-    console.error(" RSVP ERROR:", err);
+    console.error("RSVP ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-//  GET ALL RSVPs
+// GET ALL RSVPs
 app.get("/rsvp", async (req, res) => {
   try {
     const guests = await RSVP.find();
     res.json({ total: guests.length, guests });
   } catch (err) {
-    console.error(" FETCH ERROR:", err);
+    console.error("FETCH ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-//  START SERVER (CRITICAL FIX)
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(` Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
